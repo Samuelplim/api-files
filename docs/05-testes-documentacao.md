@@ -298,7 +298,7 @@ describe("FileService", () => {
         name: "test.txt",
         path: "/uploads/test.txt",
       };
-      
+
       mockFileRepository.getFile.mockResolvedValue(mockFile);
       mockFileRepository.fileExists.mockResolvedValue(true);
 
