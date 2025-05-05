@@ -653,6 +653,116 @@ A estrutura DDD facilita a escalabilidade do sistema:
 
 Esta separação clara de responsabilidades facilita a manutenção, teste e evolução do sistema.
 
+### Visualização do Fluxo de Dados
+
+```
+Cliente HTTP                                                  Sistema de Arquivos
+    |                                                              |
+    | Request POST /api/add-files                                  |
+    |                                                              |
+    v                                                              |
++-------------------+      +------------------+      +------------+|
+| FileController    |----->| FileAppService   |----->| FileService||
+| (Interfaces)      |      | (Application)    |      | (Domain)   ||
++-------------------+      +------------------+      +------------+|
+    |                             |                       |        |
+    |                             |                       v        |
+    |                             |                 +--------------+
+    |                             |                 | FileRepository|
+    |                             |                 | (Domain)      |
+    |                             |                 +--------------+
+    |                             |                       |
+    |                             |                       v
+    |                             |                 +--------------+
+    |                             |                 | FileRepositoryImpl|
+    |                             |                 | (Infrastructure)  |
+    |                             |                 +--------------+
+    |                             |                       |
+    |                             |                       v
+    |                             |                 +--------------+
+    |                             +---------------->| FileStorage  |
+    |                                               | (Infrastructure)|
+    |                                               +--------------+
+    |                                                      |
+    |                                                      v
+    |                                                    [Disco]
+    |                                                      |
+    | Response { name, uri, type }                         |
+    |<-----------------------------------------------------|
+```
+
+## Exemplos de Código em Cada Camada
+
+### 1. Camada de Interface (Controllers)
+
+```typescript
+// FileController.ts (Interface Layer)
+uploadFiles = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const files = req.files as Express.Multer.File[];
+    const results = await this.fileAppService.uploadFiles(files);
+    return res.status(200).json(results);
+  } catch (error) {
+    next(error);
+  }
+};
+```
+
+### 2. Camada de Aplicação (Serviços)
+
+```typescript
+// FileAppService.ts (Application Layer)
+async uploadFiles(files: Express.Multer.File[]): Promise<FileResponseDto[]> {
+  // Verificar arquivos
+  if (!files || files.length === 0) {
+    throw new ApiError("Arquivo não informado", 400);
+  }
+
+  // Processar e transformar resultados
+  const responses: FileResponseDto[] = [];
+  for (const file of files) {
+    // Lógica de processamento...
+    responses.push({ name, uri, type });
+  }
+  return responses;
+}
+```
+
+### 3. Camada de Domínio (Serviços e Entidades)
+
+```typescript
+// FileService.ts (Domain Layer)
+async saveFile(filename: string, buffer: Buffer, mimetype: string): Promise<any> {
+  // Regras de negócio e validações
+  if (!filename || !buffer || !mimetype) {
+    throw new ApiError("Dados do arquivo inválidos", 400);
+  }
+
+  // Delegar ao repositório
+  return await this.fileRepository.saveFile(filename, buffer, mimetype);
+}
+```
+
+### 4. Camada de Infraestrutura
+
+```typescript
+// FileRepositoryImpl.ts (Infrastructure Layer)
+async saveFile(filename: string, buffer: Buffer, mimetype: string): Promise<any> {
+  // Implementação técnica de como salvar arquivos
+  const id = nanoid();
+  const dateFolder = /* lógica de pasta por data */;
+  // Gerar caminhos, salvar no sistema de arquivos...
+  await writeFileAsync(filePath, buffer);
+  return { id, name, path, uri, mimetype, size, createdAt };
+}
+```
+
 ## Conclusão
 
-A arquitetura DDD proporciona uma estrutura sólida para o desenvolvimento da API de arquivos, facilitando a manutenção, os testes e a evolução do sistema ao longo do tempo.
+A arquitetura DDD proporciona uma estrutura sólida para o desenvolvimento da API de arquivos, facilitando a manutenção, os testes e a evolução do sistema ao longo do tempo. A clara separação de responsabilidades permite:
+
+1. Foco nas regras de negócio de forma isolada
+2. Substituição de tecnologias ou frameworks sem afetar a lógica principal
+3. Testes mais específicos e isolados para cada camada
+4. Manutenção mais simples com responsabilidades bem definidas
+5. Escalabilidade e extensibilidade na adição de novas funcionalidades
