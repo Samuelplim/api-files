@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API de Arquivos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #444;
+            margin-top: 30px;
+        }
+        code {
+            background-color: #f5f5f5;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .endpoint {
+            background-color: #e9f7ef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .method {
+            font-weight: bold;
+            color: #2e86de;
+        }
+    </style>
+</head>
+<body>
+    <h1>API de Arquivos</h1>
+    <p>Bem-vindo à API para gerenciamento de arquivos. Esta API permite o upload e recuperação de arquivos.</p>
+
+    <h2>Endpoints Disponíveis</h2>
+
+    <div class="endpoint">
+        <h3><span class="method">POST</span> /api/add-files</h3>
+        <p>Realiza o upload de um ou mais arquivos.</p>
+        <p><strong>Requisição:</strong> Formulário multipart/form-data com campo "files" contendo os arquivos.</p>
+        <p><strong>Resposta:</strong> JSON com informações dos arquivos enviados, incluindo URIs para acesso.</p>
+        <pre><code>[
+  {
+    "type": "image/jpeg",
+    "uri": "/uploads/2025-05-04/1588888888888-abc123-exemplo.jpg",
+    "name": "exemplo.jpg"
+  }
+]</code></pre>
+    </div>
+
+    <div class="endpoint">
+        <h3><span class="method">POST</span> /api/load-files</h3>
+        <p>Recupera um ou mais arquivos a partir de suas URIs.</p>
+        <p><strong>Requisição:</strong> JSON contendo um array de URIs dos arquivos.</p>
+        <pre><code>{
+  "uris": [
+    "/uploads/2025-05-04/1588888888888-abc123-exemplo.jpg"
+  ]
+}</code></pre>
+        <p><strong>Resposta:</strong> JSON com os dados dos arquivos em formato buffer.</p>
+    </div>
+
+    <h2>Exemplo de Uso</h2>
+    <p>Você pode testar o upload de arquivos usando o formulário abaixo:</p>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+        <p><input type="file" id="files" name="files" multiple></p>
+        <p><button type="submit">Enviar Arquivos</button></p>
+    </form>
+
+    <div id="result" style="margin-top: 20px;"></div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Enviando arquivos...';
+            
+            const formData = new FormData();
+            const fileInput = document.getElementById('files');
+            
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append('files', fileInput.files[i]);
+            }
+            
+            try {
+                const response = await fetch('/api/add-files', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    let html = '<h3>Arquivos enviados com sucesso:</h3><ul>';
+                    
+                    data.forEach(file => {
+                        html += `<li>
+                            <strong>${file.name}</strong> (${file.type})<br>
+                            URI: <a href="${file.uri}" target="_blank">${file.uri}</a>
+                        </li>`;
+                    });
+                    
+                    html += '</ul>';
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: red">Erro: ${data.error?.message || 'Falha ao enviar arquivos'}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red">Erro: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
