@@ -298,6 +298,35 @@ describe("FileService", () => {
         name: "test.txt",
         path: "/uploads/test.txt",
       };
+      
+      mockFileRepository.getFile.mockResolvedValue(mockFile);
+      mockFileRepository.fileExists.mockResolvedValue(true);
+
+      // Executar o método a ser testado
+      const result = await fileService.getFile("/uploads/test.txt");
+
+      // Verificar se os métodos do repositório foram chamados corretamente
+      expect(mockFileRepository.fileExists).toHaveBeenCalledWith("/uploads/test.txt");
+      expect(mockFileRepository.getFile).toHaveBeenCalledWith("/uploads/test.txt");
+
+      // Verificar o resultado
+      expect(result).toEqual(mockFile);
+    });
+
+    it("deve lançar erro quando o arquivo não existe", async () => {
+      // Configurar o mock para simular arquivo não encontrado
+      mockFileRepository.fileExists.mockResolvedValue(false);
+
+      // Executar o método e verificar se lança erro
+      await expect(fileService.getFile("/uploads/non-existent.txt")).rejects.toThrow(
+        "Arquivo não encontrado"
+      );
+
+      // Verificar se apenas o método fileExists foi chamado
+      expect(mockFileRepository.fileExists).toHaveBeenCalledWith("/uploads/non-existent.txt");
+      expect(mockFileRepository.getFile).not.toHaveBeenCalled();
+    });
+  });
 
       mockFileRepository.getFile.mockResolvedValue(mockFile);
       mockFileRepository.fileExists.mockResolvedValue(true);
