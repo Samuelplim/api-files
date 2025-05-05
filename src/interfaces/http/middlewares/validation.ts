@@ -1,6 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 import { ApiError } from "../../errors/ApiError";
 
+/**
+ * Middleware para validar requisições de upload de arquivos
+ */
+export const validateFileUpload = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
+    return next(new ApiError("Arquivo não informado", 400));
+  }
+  next();
+};
+
 export const validateLoadFilesRequest = (
   req: Request,
   res: Response,

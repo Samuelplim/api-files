@@ -6,6 +6,7 @@ export class File {
   uri: string;
   mimeType: string;
   size: number;
+  hash?: string;
   createdAt: Date;
 
   constructor(
@@ -15,7 +16,8 @@ export class File {
     path: string,
     uri: string,
     mimeType: string,
-    size: number
+    size: number,
+    hash?: string
   ) {
     this.id = id;
     this.originalName = originalName;
@@ -24,6 +26,7 @@ export class File {
     this.uri = uri;
     this.mimeType = mimeType;
     this.size = size;
+    this.hash = hash;
     this.createdAt = new Date();
   }
 }

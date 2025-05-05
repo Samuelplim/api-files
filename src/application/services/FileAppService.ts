@@ -32,6 +32,10 @@ export class FileAppService {
       );
       const uri = relativePath.replace(/\\/g, "/"); // Normaliza separadores para URLs
 
+      // Calcular hash do arquivo para verificação de integridade
+      const buffer = await this.fileStorage.readFile(file.path);
+      const hash = this.fileStorage.calculateHash(buffer);
+
       const fileEntity = new File(
         id,
         file.originalname,
@@ -39,7 +43,8 @@ export class FileAppService {
         file.path,
         uri,
         file.mimetype,
-        file.size
+        file.size,
+        hash
       );
 
       await this.fileService.saveFile(fileEntity);
@@ -57,6 +62,7 @@ export class FileAppService {
   async loadFiles(uris: string[]): Promise<FileResponseDto[]> {
     const results: FileResponseDto[] = [];
 
+    // Primeiro, verificamos se os arquivos existem na base de dados
     const files = await this.fileService.getFilesByUris(uris);
 
     // Verificar se todos os arquivos foram encontrados
@@ -67,14 +73,45 @@ export class FileAppService {
 
     for (const file of files) {
       if (file) {
-        const buffer = await this.fileStorage.readFile(file.path);
-        results.push({
-          buffer: {
-            type: "Buffer",
-            data: Array.from(buffer),
-          },
-          type: file.mimeType,
-        });
+        try {
+          // Buscar o arquivo no sistema de arquivos usando os novos métodos
+          const { buffer, filePath } = await this.fileStorage.getFile(file.uri);
+
+          // Verificar a integridade do arquivo se houver hash armazenado
+          if (file.hash) {
+            const isIntegrityValid = await this.fileStorage.verifyFileIntegrity(
+              filePath,
+              file.hash
+            );
+
+            if (!isIntegrityValid) {
+              throw new ApiError(
+                `Falha na verificação de integridade do arquivo: ${file.uri}`,
+                400
+              );
+            }
+          }
+
+          // Obter o tipo MIME (podemos usar o armazenado ou determinar novamente)
+          const type = file.mimeType || this.fileStorage.getMimeType(filePath);
+
+          // Converter buffer para array
+          const bufferArray = this.fileStorage.bufferToArray(buffer);
+
+          // Adicionar ao resultado
+          results.push({
+            buffer: {
+              type: "Buffer",
+              data: bufferArray,
+            },
+            type: type,
+          });
+        } catch (error) {
+          if (error instanceof ApiError) {
+            throw error;
+          }
+          throw new ApiError(`Erro ao processar arquivo: ${file.uri}`, 500);
+        }
       }
     }
 
