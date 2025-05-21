@@ -18,21 +18,21 @@ const router = Router();
 const fileController = new FileController();
 
 // Rota para upload de múltiplos arquivos com rate limiting
-router.post(
-  "/add-files",
-  uploadLimiter,
-  (req, res, next) => {
-    upload.array("files")(req, res, (err) => {
-      if (err) {
-        return handleMulterErrors(err, req, res, next);
-      }
-      next();
-    });
-  },
-  checkFilesExist,
-  validateFileUpload,
-  fileController.uploadFiles
-);
+  router.post(
+    "/add-files",
+    uploadLimiter,
+    (req, res, next) => {
+      upload.array("files")(req, res, (err) => {
+        if (err) {
+          return handleMulterErrors(err, req, res, next);
+        }
+        next();
+      });
+    },
+    checkFilesExist,
+    validateFileUpload,
+    fileController.uploadFiles
+  );
 
 // Rota para buscar arquivos por URI com rate limiting
 router.post(
